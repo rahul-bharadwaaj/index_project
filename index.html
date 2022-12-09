@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .button_click {
+	color: white;
+	height: 3em;
+	width: 15%;
+	padding: 0.5em auto;
+	margin: 0.5em auto;
+	background-color: #1d1d1d;
+	border: none;
+	border-radius: 3px;
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button_click:hover {
+	letter-spacing: 0.3em;
+	background-color: #d4a25a;
+}
+
+.axis {
+	stroke: 4px;
+}
+
+text {
+	font-size: 12px;
+}
+.topright {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  font-size: 18px;
+  font-size: x-large;
+  font-style: initial;
+}
+
+    </style>
+</head>
+<button class="button_click" id="Aus_btn">Australia</button>
+<button class="button_click" id="Can_btn">Canada</button>
+<button class="button_click" id="Ind_btn">India</button>
+<button class="button_click" id="Pak_btn">Pakistan</button>
+
+<div id="chart"></div>
+
+
+<body>
+    <div class="topright"> Percentage change in CO2 emissions over time 
+        by Country</div>
+    <script>
+
+var formatValue = d3.format(",");
+
+var dataset = d3.csv(
+	"https://raw.githubusercontent.com/rahul-bharadwaaj/Geospatialpart1/main/line.csv",
+	d3.autoType
+);
+
+var margin = { top: 20, right: 30, bottom: 30, left: 40 };
+
+var height = 500 - margin.top - margin.bottom;
+var width = 900 - margin.left - margin.right;
+
+var svg = d3
+	.select("#chart")
+	.append("svg")
+	.attr("preserveAspectRatio", "xMinYMin meet")
+	
+	.attr("viewBox", "-20 -20 1000 1000")
+	.style("padding", 5)
+	.style("margin", 5);
+
+dataset
+	.then((data) => {
+		data.forEach(function (d) {
+			d.year = (d.year);
+			d.Aus = +d.Australia;
+			d.Can = +d.Canada;
+			d.Ind = +d.India;
+			d.Pak = +d.Pakistan;
+		});
+
+		var x = d3
+			.scaleUtc()
+			.domain(d3.extent(data, (d) => d.year))
+			.range([margin.left, width - margin.right]);
+
+		var y = d3
+			.scaleLinear()
+			.domain([0, d3.max(data, (d) => d.Aus)])
+			.nice()
+			.range([height - margin.bottom, margin.top]);
+
+		var xAxis = svg
+			.append("g")
+			.classed("xaxis", true)
+			.attr(
+				"transform",
+				"translate(" + margin.left + "," + (height - margin.bottom) + ")"
+			)
+			.call(d3.axisBottom(x));
+
+		var yAxis = svg
+			.append("g")
+			.classed("yaxis", true)
+			.attr("transform", "translate(" + margin.left + ",0)")
+			.call(d3.axisLeft(y))
+			.call((g) => g.select(".domain").remove())
+			.call((g) =>
+				g
+					.select(".tick:last-of-type text")
+					.clone()
+					.attr("x", 3)
+					.attr("text-anchor", "start")
+					.attr("font-weight", "bold")
+			);
+		// .text(data.y));
+
+		var line = d3
+			.line()
+			.curve(d3.curveBasis)
+			.defined((d) => !isNaN(d.Aus))
+			.x((d) => x(d.year))
+			.y((d) => y(d.Aus));
+
+		svg
+			.append("path")
+			.classed("line", true)
+			.datum(data)
+			.attr("fill", "none")
+			.attr("stroke", "steelblue")
+			.attr("stroke-width", 1.5)
+			.attr("stroke-linejoin", "round")
+			.attr("stroke-linecap", "round")
+			.attr("d", line);
+
+		d3.select("#Can_btn").on("click", function (d) {
+			y.domain([0, d3.max(data, (d) => d.Can)]).nice();
+			line.defined((d) => !isNaN(d.Can)).y((d) => y(d.Can));
+
+			svg
+				.select(".line")
+				.transition()
+				.duration(750)
+				.attr("stroke", "black")
+				.attr("d", line);
+
+			svg.select(".yaxis").transition().duration(750).call(d3.axisLeft(y));
+		});
+
+		d3.select("#Aus_btn").on("click", function (d) {
+			y.domain([0, d3.max(data, (d) => d.Aus)]).nice();
+			line.defined((d) => !isNaN(d.Aus)).y((d) => y(d.Aus));
+
+			svg
+				.select(".line")
+				.transition()
+				.duration(750)
+				.attr("stroke", "steelblue")
+				.attr("d", line);
+
+			svg.select(".yaxis").transition().duration(750).call(d3.axisLeft(y));
+		});
+
+		d3.select("#Pak_btn").on("click", function (d) {
+			y.domain([0, d3.max(data, (d) => d.Pak)]).nice();
+			line.defined((d) => !isNaN(d.Pak)).y((d) => y(d.Pak));
+
+			svg
+				.select(".line")
+				.transition()
+				.duration(750)
+				.attr("stroke", "red")
+				.attr("d", line);
+
+			svg.select(".yaxis").transition().duration(750).call(d3.axisLeft(y));
+		});
+
+		d3.select("#Ind_btn").on("click", function (d) {
+			y.domain([0, d3.max(data, (d) => d.Ind)]).nice();
+			line.defined((d) => !isNaN(d.Ind)).y((d) => y(d.Ind));
+
+			svg
+				.select(".line")
+				.transition()
+				.duration(750)
+				.attr("stroke", "green")
+				.attr("d", line);
+
+			svg.select(".yaxis").transition().duration(750).call(d3.axisLeft(y));
+		});
+	})
+	.catch(console.log.bind(console));
+
+    </script>
+    
+</body>
+</html>
